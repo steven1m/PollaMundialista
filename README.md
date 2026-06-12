@@ -100,7 +100,9 @@ GET    /api/admin/pending-users
 WS     /ws (chat en tiempo real)
 ```
 
-## Estructura
+## Despliegue en Render
+
+Ver [DEPLOY_RENDER.md](./DEPLOY_RENDER.md) para la configuración completa (`render.yaml`, variables de entorno y pasos).
 
 ```
 PollaMundialista/
