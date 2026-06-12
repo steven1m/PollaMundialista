@@ -16,8 +16,8 @@ services:
     plan: free
     rootDir: backend
     buildCommand: npm install
-    preDeployCommand: npm run db:init
-    startCommand: npm start
+    #preDeployCommand: npm run db:init
+    startCommand: npm run db:init && npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
