@@ -23,7 +23,8 @@ export default function Posiciones() {
 
   const { users, matches, premios } = data;
   const ptsKey = phase === 1 ? 'p1pts' : 'p2pts';
-  const bolsa = phase === 1 ? premios?.phase1?.bolsa : premios?.phase2?.bolsa;
+  //const bolsa = phase === 1 ? premios?.phase1?.bolsa : premios?.phase2?.bolsa;
+  const bolsa = (25000*users.length);
   const upcoming = matches.filter((m) => m.can_predict).slice(0, 5);
 
   return (
