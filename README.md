@@ -33,7 +33,6 @@ npm run db:init
 npm run dev
 ```
 
-El API corre en `http://localhost:3001`.
 
 ### 3. Frontend
 
@@ -43,7 +42,6 @@ npm install
 npm run dev
 ```
 
-La app corre en `http://localhost:5173`.
 
 ## Acceso
 
