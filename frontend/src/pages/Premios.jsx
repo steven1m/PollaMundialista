@@ -27,7 +27,7 @@ export default function Premios() {
     <div>
       <h1 className="page-title">Premios</h1>
       <p style={{ color: 'var(--muted)', marginBottom: '1.5rem' }}>
-        Distribución: 1° 50% · 2° 30% · 3° 20% de la bolsa · Inscripción: $50.000 COP por fase
+        Distribución: 1° 50% · 2° 30% · 3° 20% de la bolsa · Inscripción: $25.000 COP · +50% aporte empresa
       </p>
 
       <div className="grid-2">
