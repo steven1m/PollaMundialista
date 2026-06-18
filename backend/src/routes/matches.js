@@ -81,6 +81,28 @@ router.post('/:id/result', authMiddleware, adminMiddleware, async (req, res) => 
   }
 });
 
+router.patch('/:id/status', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const valid = ['upcoming', 'locked', 'played'];
+    if (!valid.includes(status)) {
+      return res.status(400).json({ error: 'Estado inválido' });
+    }
+
+    const result = await pool.query(
+      'UPDATE matches SET status = $1 WHERE id = $2 RETURNING *',
+      [status, req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Partido no encontrado' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al actualizar estado' });
+  }
+});
+
 router.patch('/:id/teams', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { home_team, away_team } = req.body;

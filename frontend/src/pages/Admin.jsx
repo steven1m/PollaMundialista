@@ -45,6 +45,17 @@ export default function Admin() {
     }
   };
 
+  const handleStatus = async (matchId, status) => {
+    const label = status === 'locked' ? 'iniciar el partido (bloquear predicciones)' : 'revertir a Próximo';
+    if (!confirm(`¿Confirmar ${label}?`)) return;
+    try {
+      await api.setMatchStatus(matchId, status);
+      notify(status === 'locked' ? 'Partido en curso' : 'Partido revertido a Próximo');
+    } catch (err) {
+      setMsg(err.message);
+    }
+  };
+
   const handleUnlock = async (round) => {
     if (!confirm(`¿Desbloquear ${round}?`)) return;
     try {
@@ -158,7 +169,7 @@ export default function Admin() {
         <div className="card">
           <h2 className="section-title" style={{ marginTop: 0 }}>Registrar resultados</h2>
           {data.matches.filter((m) => m.status !== 'played').slice(0, 20).map((m) => (
-            <ResultRow key={m.id} match={m} onSave={handleResult} />
+            <ResultRow key={m.id} match={m} onSave={handleResult} onStatus={handleStatus} />
           ))}
         </div>
       )}
@@ -229,22 +240,36 @@ export default function Admin() {
   );
 }
 
-function ResultRow({ match, onSave }) {
+function ResultRow({ match, onSave, onStatus }) {
   const [home, setHome] = useState('');
   const [away, setAway] = useState('');
+  const statusLabel = match.status === 'locked' ? '🔴 En curso' : '🟢 Próximo';
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0', flexWrap: 'wrap', borderBottom: '1px solid var(--border)' }}>
       <span style={{ flex: 1, minWidth: 180 }}>
         {match.home_team} vs {match.away_team}
         <span className="badge badge-info" style={{ marginLeft: 6 }}>{match.round}</span>
+        <span className="badge" style={{ marginLeft: 6 }}>{statusLabel}</span>
       </span>
-      <input type="number" min="0" value={home} onChange={(e) => setHome(e.target.value)} style={{ width: 45, padding: 4, textAlign: 'center' }} />
-      <span>-</span>
-      <input type="number" min="0" value={away} onChange={(e) => setAway(e.target.value)} style={{ width: 45, padding: 4, textAlign: 'center' }} />
-      <button className="btn btn-sm btn-primary" disabled={home === '' || away === ''} onClick={() => onSave(match.id, parseInt(home), parseInt(away))}>
-        Guardar
-      </button>
+      {match.status === 'upcoming' && (
+        <button className="btn btn-sm btn-danger" onClick={() => onStatus(match.id, 'locked')}>
+          🔒 Iniciar partido
+        </button>
+      )}
+      {match.status === 'locked' && (
+        <>
+          <button className="btn btn-sm btn-outline" onClick={() => onStatus(match.id, 'upcoming')}>
+            ↩ Revertir
+          </button>
+          <input type="number" min="0" value={home} onChange={(e) => setHome(e.target.value)} style={{ width: 45, padding: 4, textAlign: 'center' }} />
+          <span>-</span>
+          <input type="number" min="0" value={away} onChange={(e) => setAway(e.target.value)} style={{ width: 45, padding: 4, textAlign: 'center' }} />
+          <button className="btn btn-sm btn-primary" disabled={home === '' || away === ''} onClick={() => onSave(match.id, parseInt(home), parseInt(away))}>
+            Guardar
+          </button>
+        </>
+      )}
     </div>
   );
 }

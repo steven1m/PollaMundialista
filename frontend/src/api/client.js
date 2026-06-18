@@ -31,6 +31,8 @@ export const api = {
   getMatches: (params) => request(`/matches${params ? `?${params}` : ''}`),
   setResult: (id, home_score, away_score) =>
     request(`/matches/${id}/result`, { method: 'POST', body: JSON.stringify({ home_score, away_score }) }),
+  setMatchStatus: (id, status) =>
+    request(`/matches/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   updateTeams: (id, home_team, away_team) =>
     request(`/matches/${id}/teams`, { method: 'PATCH', body: JSON.stringify({ home_team, away_team }) }),
 
