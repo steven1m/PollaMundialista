@@ -26,10 +26,10 @@ export default function Predicciones() {
 
   const grouped = useMemo(() => {
     if (!data?.matches) return {};
-    const upcoming = data.matches.filter(
-      (m) => m.status === 'upcoming' || (m.can_predict && m.status !== 'played')
+    const visible = data.matches.filter(
+      (m) => m.status !== 'played' && (m.can_predict || m.status === 'locked')
     );
-    return upcoming.reduce((acc, m) => {
+    return visible.reduce((acc, m) => {
       const key = `${m.stage} — ${m.round}`;
       if (!acc[key]) acc[key] = [];
       acc[key].push(m);
@@ -93,6 +93,7 @@ export default function Predicciones() {
 function MatchPredictionRow({ match, pred, saving, onSave }) {
   const [home, setHome] = useState(() => pred?.home_pred ?? '');
   const [away, setAway] = useState(() => pred?.away_pred ?? '');
+  const readOnly = match.status === 'locked' || !match.can_predict;
 
   useEffect(() => {
     setHome(pred?.home_pred ?? '');
@@ -105,25 +106,37 @@ function MatchPredictionRow({ match, pred, saving, onSave }) {
         <strong>{match.home_team}</strong> vs <strong>{match.away_team}</strong>
         <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{formatDate(match.match_date)}</div>
       </div>
-      <input
-        type="number" min="0" max="20" value={home}
-        onChange={(e) => setHome(e.target.value)}
-        style={{ width: 50, padding: '0.4rem', textAlign: 'center', border: '1px solid var(--border)', borderRadius: 6 }}
-      />
-      <span>—</span>
-      <input
-        type="number" min="0" max="20" value={away}
-        onChange={(e) => setAway(e.target.value)}
-        style={{ width: 50, padding: '0.4rem', textAlign: 'center', border: '1px solid var(--border)', borderRadius: 6 }}
-      />
-      <button
-        className="btn btn-sm btn-primary"
-        disabled={saving || home === '' || away === ''}
-        onClick={() => onSave(match.id, parseInt(home), parseInt(away))}
-      >
-        {saving ? '...' : pred ? 'Actualizar' : 'Guardar'}
-      </button>
-      {pred && <span className="badge badge-success">✓</span>}
+      {readOnly ? (
+        <>
+          <span style={{ fontWeight: 600, minWidth: 60, textAlign: 'center' }}>
+            {pred ? `${pred.home_pred} — ${pred.away_pred}` : 'Sin predicción'}
+          </span>
+          {match.status === 'locked' && <span className="badge">🔴 En curso</span>}
+          {pred && <span className="badge badge-success">✓</span>}
+        </>
+      ) : (
+        <>
+          <input
+            type="number" min="0" max="20" value={home}
+            onChange={(e) => setHome(e.target.value)}
+            style={{ width: 50, padding: '0.4rem', textAlign: 'center', border: '1px solid var(--border)', borderRadius: 6 }}
+          />
+          <span>—</span>
+          <input
+            type="number" min="0" max="20" value={away}
+            onChange={(e) => setAway(e.target.value)}
+            style={{ width: 50, padding: '0.4rem', textAlign: 'center', border: '1px solid var(--border)', borderRadius: 6 }}
+          />
+          <button
+            className="btn btn-sm btn-primary"
+            disabled={saving || home === '' || away === ''}
+            onClick={() => onSave(match.id, parseInt(home), parseInt(away))}
+          >
+            {saving ? '...' : pred ? 'Actualizar' : 'Guardar'}
+          </button>
+          {pred && <span className="badge badge-success">✓</span>}
+        </>
+      )}
     </div>
   );
 }

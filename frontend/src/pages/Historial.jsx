@@ -3,6 +3,35 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import { usePolling, formatDate } from '../hooks/useApp';
 
+function buildPlayedRows(predictions, matches, userName) {
+  const predPlayed = predictions.filter((p) => p.match_status === 'played');
+  if (!matches?.length) return predPlayed;
+
+  const predMatchIds = new Set(predPlayed.map((p) => p.match_id));
+  const missing = matches
+    .filter((m) => !predMatchIds.has(m.id))
+    .map((m) => ({
+      id: `missing-${m.id}`,
+      match_id: m.id,
+      home_team: m.home_team,
+      away_team: m.away_team,
+      home_score: m.home_score,
+      away_score: m.away_score,
+      match_status: 'played',
+      round: m.round,
+      match_date: m.match_date,
+      match_order: m.match_order,
+      home_pred: null,
+      away_pred: null,
+      points: 0,
+      user_name: userName,
+    }));
+
+  return [...predPlayed, ...missing].sort(
+    (a, b) => (a.match_order ?? 0) - (b.match_order ?? 0)
+  );
+}
+
 export default function Historial() {
   const { user, settings } = useAuth();
   const phase = settings?.active_phase || 1;
@@ -11,12 +40,14 @@ export default function Historial() {
 
   const fetchData = useCallback(async () => {
     const params = `phase=${phase}${filterUser ? `&user_id=${filterUser}` : ''}`;
-    const [predData, usersData] = await Promise.all([
+    const includeMissing = !user?.is_admin || filterUser;
+    const [predData, usersData, matches] = await Promise.all([
       api.getPredictions(params),
       user?.is_admin ? api.getUsers() : Promise.resolve([]),
+      includeMissing ? api.getMatches(`phase=${phase}&status=played`) : Promise.resolve([]),
     ]);
     if (user?.is_admin) setUsers(usersData);
-    return predData;
+    return { ...predData, matches };
   }, [phase, filterUser, user?.is_admin]);
 
   const { data, loading, error } = usePolling(fetchData, 30000);
@@ -24,8 +55,14 @@ export default function Historial() {
   if (loading && !data) return <p>Cargando...</p>;
   if (error) return <div className="alert alert-error">{error}</div>;
 
-  const { predictions, stats } = data;
-  const played = predictions.filter((p) => p.match_status === 'played');
+  const { predictions, stats, matches } = data;
+  const includeMissing = !user?.is_admin || filterUser;
+  const userName = user?.is_admin
+    ? users.find((u) => String(u.id) === filterUser)?.name
+    : user?.name;
+  const played = includeMissing
+    ? buildPlayedRows(predictions, matches, userName)
+    : predictions.filter((p) => p.match_status === 'played');
 
   return (
     <div>
@@ -75,13 +112,17 @@ export default function Historial() {
             </thead>
             <tbody>
               {played.length === 0 ? (
-                <tr><td colSpan={user?.is_admin ? 6 : 5} className="empty-state">Sin predicciones jugadas aún</td></tr>
+                <tr><td colSpan={user?.is_admin ? 6 : 5} className="empty-state">Sin partidos jugados aún</td></tr>
               ) : (
                 played.map((p) => (
                   <tr key={p.id}>
                     {user?.is_admin && <td>{p.user_name}</td>}
                     <td>{p.home_team} vs {p.away_team}<br /><span className="badge badge-info">{p.round}</span></td>
-                    <td>{p.home_pred} - {p.away_pred}</td>
+                    <td>
+                      {p.home_pred != null
+                        ? `${p.home_pred} - ${p.away_pred}`
+                        : <span className="badge badge-danger">Sin predicción</span>}
+                    </td>
                     <td>{p.home_score} - {p.away_score}</td>
                     <td>
                       <span className={`badge ${p.points === 3 ? 'badge-success' : p.points === 1 ? 'badge-warning' : 'badge-danger'}`}>
